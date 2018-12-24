@@ -1,7 +1,5 @@
 <template>
-  <div id="app">
-    <router-view/>
-  </div>
+  <div class="Home">这是住页面</div>
 </template>
 
 <script>

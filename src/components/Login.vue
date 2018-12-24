@@ -1,7 +1,5 @@
 <template>
-  <div id="app">
-    <router-view/>
-  </div>
+  <div class="Login">这是登录页面</div>
 </template>
 
 <script>
