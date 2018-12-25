@@ -56,8 +56,8 @@ export default {
               type: 'success',
               durttion: 1000
             })
-            this.$router.push('/Home')
             localStorage.setItem('token', res.data.data.token)
+            this.$router.push('/Home')
           } else {
             this.$message.error(res.data.meta.msg)
             // this.$message({
