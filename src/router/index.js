@@ -5,7 +5,7 @@ import Home from '@/components/Home'
 
 Vue.use(Router)
 
-export default new Router({
+const router = new Router({
   routes: [
     {
       path: '/',
@@ -21,3 +21,16 @@ export default new Router({
     }
   ]
 })
+router.beforeEach((to, from, next) => {
+  let token = localStorage.getItem('token')
+  if (to.path === '/login') {
+    next()
+    return
+  }
+  if (token) {
+    next()
+  } else {
+    next('/login')
+  }
+})
+export default router
