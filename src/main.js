@@ -12,6 +12,10 @@ import 'element-ui/lib/theme-chalk/index.css'
 // 导入通用的样式
 import '@/assets/base.css'
 
+import axios from 'axios'
+
+Vue.prototype.axios = axios
+
 // 使用element-ui插件
 Vue.use(ElementUI)
 
