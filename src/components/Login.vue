@@ -1,11 +1,11 @@
 <template>
   <div class="login">
-    <el-form ref="form" :model="form" :rules="rules"  label-width="80px" status-icon>
-      <img src="@/assets/avatar.jpg" alt="">
+    <el-form ref="form" :model="form" :rules="rules" label-width="80px" status-icon>
+      <img src="@/assets/avatar.jpg" alt>
       <el-form-item label="用户名" prop="username">
         <el-input v-model="form.username"></el-input>
       </el-form-item>
-      <el-form-item label="密码" prop="password">
+      <el-form-item label="密码" prop="password" @keyup.enter.native="login">
         <el-input v-model="form.password" type="password"></el-input>
       </el-form-item>
       <el-form-item>
@@ -27,12 +27,23 @@ export default {
       },
       rules: {
         username: [
-          { required: true, message: '请输入用户名', trigger: 'change' },
-          { min: 3, max: 5, message: '长度在 3 到 5 个字符', trigger: 'change' }
+          { required: true, message: '用户名不能为空', trigger: 'blur' },
+          { min: 3, max: 9, message: '长度应该是3-9位之间', trigger: 'blur' }
         ],
         password: [
-          { required: true, message: '请输入密码', trigger: 'change' },
-          { min: 6, max: 12, message: '长度在 6 到 12 个字符', trigger: 'change' }
+          { required: true, message: '用户密码不能为空', trigger: 'blur' },
+          { min: 6, max: 12, message: '长度应该是6-12位之间', trigger: 'blur' }
+        ],
+        email: [
+          { type: 'email', message: '请输入一个合法的邮箱', trigger: 'blur' }
+        ],
+        mobile: [
+          // 考虑3位
+          {
+            pattern: /^1[3-9]\d{9}$/,
+            message: '请输入一个合法的手机号',
+            trigger: 'blur'
+          }
         ]
       }
     }
@@ -42,24 +53,24 @@ export default {
       this.$refs['form'].resetFields()
     },
     login() {
-      this.$refs['form'].validate((valid) => {
+      this.$refs['form'].validate(valid => {
         if (!valid) return false
         axios({
           method: 'post',
-          url: 'http://localhost:8888/api/private/v1/login',
+          url: 'login',
           data: this.form
         }).then(res => {
-          console.log(res.data)
-          if (res.data.meta.status === 200) {
+          console.log(res)
+          if (res.meta.status === 200) {
             this.$message({
               message: '登录成功了',
               type: 'success',
               durttion: 1000
             })
-            localStorage.setItem('token', res.data.data.token)
+            localStorage.setItem('token', res.data.token)
             this.$router.push('/Home')
           } else {
-            this.$message.error(res.data.meta.msg)
+            this.$message.error(res.meta.msg)
             // this.$message({
             //   message: this.data.meta.nsg,
             //   type: 'error'
@@ -68,7 +79,6 @@ export default {
         })
       })
     }
-
   }
 }
 </script>
@@ -80,22 +90,22 @@ export default {
   background-color: #2d434c;
   overflow: hidden;
   .el-form {
-    img{
+    img {
       position: absolute;
       left: 50%;
       transform: translate(-50%);
       top: -70px;
       border-radius: 50%;
-      border: 10px solid #fff
+      border: 10px solid #fff;
     }
     width: 400px;
     background-color: #fff;
     margin: 200px auto;
     padding: 75px 40px 15px;
     border-radius: 10px;
-    position: relative
+    position: relative;
   }
-  .el-button + .el-button{
+  .el-button + .el-button {
     margin-left: 80px;
   }
 }
