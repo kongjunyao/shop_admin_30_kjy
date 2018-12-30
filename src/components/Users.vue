@@ -29,7 +29,7 @@
       </el-table-column>
       <el-table-column label="操作">
         <template slot-scope="scope">
-          <el-button type="primary" icon="el-icon-edit" circle plain></el-button>
+          <el-button type="primary" icon="el-icon-edit" circle plain @click="showEdit(scope.row)"></el-button>
           <el-button
             type="danger"
             icon="el-icon-delete"
@@ -75,25 +75,22 @@
       </span>
     </el-dialog>
     <!-- 修改用户模态框 -->
-    <el-dialog title="添加用户" :visible.sync="editDialogVisible" width="40%">
+    <el-dialog title="修改用户" :visible.sync="editDialogVisible" width="40%">
       <!-- 表单组件 -->
-      <el-form ref="addForm" status-icon :model="addForm" :rules="rules" label-width="80px">
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="addForm.username" placeholder="请输入用户名"></el-input>
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="addForm.password" placeholder="请输入用户密码"></el-input>
+      <el-form ref="editForm" status-icon :model="editForm" :rules="rules" label-width="80px">
+        <el-form-item label="用户名">
+          <el-tag type="info">{{editForm.username}}</el-tag>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
-          <el-input v-model="addForm.email" placeholder="请输入用户邮箱"></el-input>
+          <el-input v-model="editForm.email" placeholder="请输入用户邮箱"></el-input>
         </el-form-item>
         <el-form-item label="电话" prop="mobile">
-          <el-input v-model="addForm.mobile" placeholder="请输入用户电话"></el-input>
+          <el-input v-model="editForm.mobile" placeholder="请输入用户电话"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="addDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="addUser">确 定</el-button>
+        <el-button @click="editDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="updateUser">确 定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -110,11 +107,18 @@ export default {
       total: 0,
       pageSize: 2,
       addDialogVisible: false,
+      editDialogVisible: false,
       addForm: {
         username: '',
         paddword: '',
         mobile: '',
         email: ''
+      },
+      editForm: {
+        email: '',
+        mobile: '',
+        id: '',
+        username: ''
       },
       rules: {
         username: [
@@ -148,8 +152,8 @@ export default {
       this.currentPage = val
       this.getUserList()
     },
-    getUserList() {
-      this.axios({
+    async getUserList() {
+      let res = await this.axios({
         methods: 'get',
         url: 'users',
         params: {
@@ -157,78 +161,107 @@ export default {
           pagenum: this.currentPage,
           pagesize: this.pageSize
         }
-      }).then(res => {
-        let {
-          meta: { status },
-          data: { users, total }
-        } = res
-        if (status === 200) {
-          this.userList = users
-          this.total = total
-        }
       })
+      let {
+        meta: { status },
+        data: { users, total }
+      } = res
+      if (status === 200) {
+        this.userList = users
+        this.total = total
+      }
     },
     searchUser() {
       this.currentPage = 1
       this.getUserList()
     },
-    delUser(id) {
-      this.$confirm('你确定删除该用户吗?', '温馨提示', {
-        type: 'warning'
-      }).then(() => {
-        this.axios({
+    async delUser(id) {
+      try {
+        await this.$confirm('你确定删除该用户吗?', '温馨提示', {
+          type: 'warning'
+        })
+        let res = await this.axios({
           url: `users/${id}`,
           method: 'delete'
-        }).then(res => {
-          let {
-            meta: { status }
-          } = res
-          if (status === 200) {
-            if (this.userList.length >= 1 && this.currentPage > 1) {
-              this.currentPage--
-            }
-            this.getUserList()
-            this.$message.success('恭喜你，删除成功')
-          }
         })
-      })
-    },
-    changeStatus({ id, mg_state: mgState }) {
-      this.axios({
-        method: 'put',
-        url: 'users/' + id + '/state/' + mgState
-      }).then(res => {
         let {
           meta: { status }
         } = res
         if (status === 200) {
-          this.$message.success('恭喜修改成功')
+          if (this.userList.length <= 1 && this.currentPage > 1) {
+            this.currentPage--
+          }
+          this.getUserList()
+          this.$message.success('恭喜你，删除成功')
         }
+      } catch (e) {
+        this.$message.info('删除失败')
+      }
+    },
+    async changeStatus({ id, mg_state: mgState }) {
+      let res = await this.axios({
+        method: 'put',
+        url: 'users/' + id + '/state/' + mgState
       })
+      let {
+        meta: { status }
+      } = res
+      if (status === 200) {
+        this.$message.success('恭喜修改成功')
+      }
     },
     showAdd() {
       this.addDialogVisible = true
     },
-    addUser() {
-      this.$refs.addForm.validate(valid => {
-        if (!valid) return false
-        this.axios({
+    async addUser() {
+      try {
+        await this.$refs.addForm.validate()
+        let res = await this.axios({
           method: 'post',
           url: 'users',
           data: this.addForm
-        }).then(res => {
-          if (res.meta.status === 201) {
-            this.$refs.addForm.resetFields()
-            this.addDialogVisible = false
-            this.total++
-            this.currentPage = Math.ceil(this.total / this.pageSize)
-            this.getUserList()
-            this.$message.success('添加成功了')
-          } else {
-            this.$message.error(res.meta.msg)
-          }
         })
-      })
+        if (res.meta.status === 201) {
+          this.$refs.addForm.resetFields()
+          this.addDialogVisible = false
+          this.total++
+          this.currentPage = Math.ceil(this.total / this.pageSize)
+          this.getUserList()
+          this.$message.success('添加成功了')
+        } else {
+          this.$message.error(res.meta.msg)
+        }
+      } catch (e) {
+        return false
+      }
+    },
+    showEdit(user) {
+      this.editDialogVisible = true
+      this.editForm.id = user.id
+      this.editForm.email = user.email
+      this.editForm.mobile = user.mobile
+      this.editForm.username = user.username
+    },
+    async updateUser() {
+      try {
+        await this.$refs.editForm.validate()
+        // 发送ajax请求
+        let res = await this.axios({
+          method: 'put',
+          url: `users/${this.editForm.id}`,
+          data: this.editForm
+        })
+        if (res.meta.status === 200) {
+          this.$refs.editForm.resetFields()
+          this.editDialogVisible = false
+          this.getUserList()
+          this.$message.success('修改用户信息成功')
+        } else {
+          this.$message.error(res.meta.msg)
+        }
+      } catch (e) {
+        return false
+      }
     }
   },
   created() {

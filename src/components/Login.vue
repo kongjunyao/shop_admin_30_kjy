@@ -17,7 +17,6 @@
 </template>
 
 <script>
-import axios from 'axios'
 export default {
   data() {
     return {
@@ -27,22 +26,16 @@ export default {
       },
       rules: {
         username: [
-          { required: true, message: '用户名不能为空', trigger: 'blur' },
-          { min: 3, max: 9, message: '长度应该是3-9位之间', trigger: 'blur' }
+          { required: true, message: '请输入用户名', trigger: 'change' },
+          { min: 3, max: 5, message: '长度在 3 到 5 个字符', trigger: 'change' }
         ],
         password: [
-          { required: true, message: '用户密码不能为空', trigger: 'blur' },
-          { min: 6, max: 12, message: '长度应该是6-12位之间', trigger: 'blur' }
-        ],
-        email: [
-          { type: 'email', message: '请输入一个合法的邮箱', trigger: 'blur' }
-        ],
-        mobile: [
-          // 考虑3位
+          { required: true, message: '请输入密码', trigger: 'change' },
           {
-            pattern: /^1[3-9]\d{9}$/,
-            message: '请输入一个合法的手机号',
-            trigger: 'blur'
+            min: 6,
+            max: 12,
+            message: '长度在 6 到 12 个字符',
+            trigger: 'change'
           }
         ]
       }
@@ -52,32 +45,49 @@ export default {
     reset() {
       this.$refs['form'].resetFields()
     },
-    login() {
-      this.$refs['form'].validate(valid => {
-        if (!valid) return false
-        axios({
+    async login() {
+      try {
+        await this.$refs.form.validate()
+        let res = await this.axios({
           method: 'post',
           url: 'login',
           data: this.form
-        }).then(res => {
-          console.log(res)
-          if (res.meta.status === 200) {
-            this.$message({
-              message: '登录成功了',
-              type: 'success',
-              durttion: 1000
-            })
-            localStorage.setItem('token', res.data.token)
-            this.$router.push('/Home')
-          } else {
-            this.$message.error(res.meta.msg)
-            // this.$message({
-            //   message: this.data.meta.nsg,
-            //   type: 'error'
-            // })
-          }
         })
-      })
+        if (res.meta.status === 200) {
+          this.$message({
+            message: '登录成功了',
+            type: 'success',
+            durttion: 1000
+          })
+          localStorage.setItem('token', res.data.token)
+          this.$router.push('/Home')
+        } else {
+          this.$message.error(res.meta.msg)
+        }
+      } catch (e) {
+        return false
+      }
+
+      //   if (!valid) return false
+      //   axios({
+      //     method: 'post',
+      //     url: 'login',
+      //     data: this.form
+      //   }).then(res => {
+      //     console.log(res)
+      //     if (res.meta.status === 200) {
+      //       this.$message({
+      //         message: '登录成功了',
+      //         type: 'success',
+      //         durttion: 1000
+      //       })
+      //       localStorage.setItem('token', res.data.token)
+      //       this.$router.push('/Home')
+      //     } else {
+      //       this.$message.error(res.meta.msg)
+      //     }
+      //   })
+      // })
     }
   }
 }
