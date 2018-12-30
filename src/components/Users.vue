@@ -110,7 +110,7 @@ export default {
       editDialogVisible: false,
       addForm: {
         username: '',
-        paddword: '',
+        password: '',
         mobile: '',
         email: ''
       },
