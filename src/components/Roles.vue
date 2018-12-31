@@ -7,20 +7,20 @@
       <el-breadcrumb-item>角色列表</el-breadcrumb-item>
     </el-breadcrumb>
     <!-- 添加按钮 -->
-    <el-button type="success" plain @click="showAddRight">添加角色</el-button>
+    <el-button type="success" plain @click="showAddRole">添加角色</el-button>
     <!-- 表格 -->
     <el-table :data="roleList">
       <el-table-column type="expand">
         <template slot-scope="{row}">
           <el-row class="l1" v-for="l1 in row.children" :key="l1.id">
             <el-col :span="4">
-              <el-tag closable @close="delRight(row, l1.id)">{{l1.authName}}</el-tag>
+              <el-tag closable @close="delRole(row, l1.id)">{{l1.authName}}</el-tag>
               <i class="el-icon-arrow-right"></i>
             </el-col>
             <el-col :span="20">
               <el-row class="l2" v-for="l2 in l1.children" :key="l2.id">
                 <el-col :span="4">
-                  <el-tag closable @close="delRight(row, l2.id)">{{l2.authName}}</el-tag>
+                  <el-tag closable @close="delRole(row, l2.id)">{{l2.authName}}</el-tag>
                   <i class="el-icon-arrow-right"></i>
                 </el-col>
                 <el-col :span="20">
@@ -49,7 +49,7 @@
             icon="el-icon-edit"
             circle
             size="mini"
-            @click="showEdit()"
+            @click="showEdit(row)"
           ></el-button>
           <el-button
             type="danger"
@@ -57,7 +57,7 @@
             icon="el-icon-delete"
             circle
             size="mini"
-            @click="delRole(row.id)"
+            @click="delRoles(row.id)"
           ></el-button>
           <el-button
             type="success"
@@ -81,7 +81,7 @@
       ></el-tree>
       <span slot="footer" class="dialog-footer">
         <el-button @click="assignDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="assignRight()">确 定</el-button>
+        <el-button type="primary" @click="assignRole">确 定</el-button>
       </span>
     </el-dialog>
     <el-dialog title="添加角色" :visible.sync="addDialogVisible" width="40%">
@@ -95,7 +95,7 @@
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="addDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="addRight">确 定</el-button>
+        <el-button type="primary" @click="addRole">确 定</el-button>
       </span>
     </el-dialog>
     <!-- 修改 -->
@@ -110,7 +110,7 @@
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="editDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="addRight">确 定</el-button>
+        <el-button type="primary" @click="updataRole">确 定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -135,6 +135,7 @@ export default {
         roleDesc: ''
       },
       editForm: {
+        id: '',
         roleName: '',
         roleDesc: ''
       },
@@ -153,7 +154,7 @@ export default {
         this.roleList = res.data
       }
     },
-    async delRight(role, rightId) {
+    async delRole(role, rightId) {
       let res = await this.axios.delete(`roles/${role.id}/rights/${rightId}`)
       if (res.meta.status === 200) {
         // 删除成功
@@ -182,7 +183,7 @@ export default {
       })
       this.$refs.tree.setCheckedKeys(ids)
     },
-    async assignRight() {
+    async assignRole() {
       let setCheckedKeys = this.$refs.tree.getCheckedKeys()
       let halfCheckdKeys = this.$refs.tree.getHalfCheckedKeys()
       let rids = setCheckedKeys.concat(halfCheckdKeys).join()
@@ -193,7 +194,7 @@ export default {
         this.$message.success('分配权限成功了')
       }
     },
-    async delRole(id) {
+    async delRoles(id) {
       try {
         await this.$confirm('你确定要删除该角色吗', '温馨提示', {
           type: 'warning'
@@ -205,10 +206,10 @@ export default {
         }
       } catch (e) {}
     },
-    showAddRight() {
+    showAddRole() {
       this.addDialogVisible = true
     },
-    async addRight() {
+    async addRole() {
       try {
         await this.$refs.addForm.validate()
         let res = await this.axios({
@@ -229,8 +230,29 @@ export default {
         return false
       }
     },
-    showEdit() {
+    showEdit(user) {
       this.editDialogVisible = true
+      this.editForm.id = user.id
+      this.editForm.roleName = user.roleName
+      this.editForm.roleDesc = user.roleDesc
+    },
+    async updataRole() {
+      try {
+        let id = this.editForm.id
+        let res = await this.axios({
+          method: 'put',
+          url: `roles/${id}`,
+          data: this.editForm
+        })
+        console.log(res)
+        if (res.meta.status === 200) {
+          this.editDialogVisible = false
+          this.getRoleList()
+          this.$message.success('操作成功了')
+        }
+      } catch (e) {
+        return false
+      }
     }
   },
   created() {
